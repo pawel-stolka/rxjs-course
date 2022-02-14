@@ -1,8 +1,12 @@
+import { Course } from './../model/course';
 import { Observable } from 'rxjs';
 
 export function createHttpObservable(url: string) {
-  return new Observable((observer) => {
-    fetch('/api/courses')
+  return new Observable<any>((observer) => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    fetch(url, { signal })
       .then((res) => res.json())
       .then((body) => {
         observer.next(body);
@@ -11,5 +15,7 @@ export function createHttpObservable(url: string) {
       .catch((err) => {
         observer.error(err);
       });
+
+    return () => controller.abort();
   });
 }
