@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Course } from '../model/course';
-import { interval, noop, Observable, of, timer } from 'rxjs';
+import { interval, noop, Observable, of, throwError, timer } from 'rxjs';
 import {
   catchError,
   delayWhen,
   filter,
+  finalize,
   map,
   retryWhen,
   shareReplay,
@@ -27,20 +28,17 @@ export class HomeComponent implements OnInit {
     const http$ = createHttpObservable('/api/courses');
 
     const courses$: Observable<Course[]> = http$.pipe(
+      catchError(err => {
+        console.log('Error occured', err);
+
+        return throwError(err);
+      }),
+      finalize(() => {
+        console.log('Finalize executed.')
+      }),
       tap(() => console.log('Request')),
       map((res) => Object.values(res['payload'])),
       shareReplay<Course[]>(),
-      catchError(err => of([  // returns fake error of observable<Course[]>
-        {
-          id: 0,
-          description: "Error fake",
-          iconUrl: 'https://s3-us-west-1.amazonaws.com/angular-university/course-images/rxjs-in-practice-course.png',
-          courseListIcon: 'https://angular-academy.s3.amazonaws.com/main-logo/main-page-logo-small-hat.png',
-          longDescription: err,
-          category: 'BEGINNER',
-          lessonsCount: 10
-      }
-      ]))
     );
 
     this.beginnerCourses$ = courses$.pipe(
